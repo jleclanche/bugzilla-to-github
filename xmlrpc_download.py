@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+Connect to a bugzilla xml-rpc.cgi and download all the things.
+This exports products, bugs, comments and bug history to a "bugzilla.json"
+output file which can in turn be used to quickly import things to a different
+format.
+"""
 
 import json
 import sys
