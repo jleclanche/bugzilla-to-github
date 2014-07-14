@@ -16,6 +16,7 @@ EXPORT_DIRECTORY = "export/"
 BUGZILLA_JSON = "bugzilla.json"
 DEFAULT_MILESTONE_USER = ""
 COMMENT_RE = re.compile(r"comment #(\d+)")
+COMMENT_SUB = r"```BZ-IMPORT::comment #\1```"
 COMMENT_REPLY_RE = re.compile(r"\(In reply to (.+) from comment #(\d+)\)" + "\n")
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
@@ -123,6 +124,8 @@ class Comment(object):
 		if obj.attachment:
 			repl = CREATED_ATTACHMENT_SUB % (ATTACHMENT_URL % {"attachment_id": obj.attachment})
 			obj.body = re.sub(CREATED_ATTACHMENT_RE, repl, obj.body)
+
+		obj.body = re.sub(COMMENT_RE, COMMENT_SUB, obj.body)
 		return obj
 
 	def to_github(self):
@@ -133,12 +136,6 @@ class Comment(object):
 			"updated_at": self.updated_at,
 		}
 
-
-# TODO We may need to do some preprocessing on the text.
-# For example, we don't want the "(In reply to comment #123)" to link to issues.
-# sre = COMMENT_RE.search(text, re.IGNORECASE)
-# if sre:
-# 	print(re.sub(COMMENT_RE, r"... \1 ...", text))
 
 class Bug(object):
 	@classmethod
