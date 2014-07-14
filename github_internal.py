@@ -17,6 +17,9 @@ BUGZILLA_JSON = "bugzilla.json"
 DEFAULT_MILESTONE_USER = ""
 COMMENT_RE = re.compile(r"comment #(\d+)")
 COMMENT_REPLY_RE = re.compile(r"\(In reply to (.+) from comment #(\d+)\)" + "\n")
+CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
+CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
+ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
 
 try:
 	from local_settings import *
@@ -117,6 +120,9 @@ class Comment(object):
 		obj.updated_at = None
 		obj.body = comment["text"]
 		obj.attachment = comment.get("attachment_id")
+		if obj.attachment:
+			repl = CREATED_ATTACHMENT_SUB % (ATTACHMENT_URL % {"attachment_id": obj.attachment})
+			obj.body = re.sub(CREATED_ATTACHMENT_RE, repl, obj.body)
 		return obj
 
 	def to_github(self):
