@@ -33,7 +33,8 @@ def main():
 	bugzilla = xmlrpc.client.ServerProxy(sys.argv[1])
 
 	print("Exporting products")
-	products = bugzilla.Product.get(bugzilla.Product.get_selectable_products())["products"]
+	_products = bugzilla.Product.get(bugzilla.Product.get_selectable_products())["products"]
+	products = {product["name"]: product for product in _products}
 
 	print("Exporting bugs")
 	valid_ids = filter(lambda i: i not in BLACKLIST, range(1, MAX_BUG_ID))
@@ -53,13 +54,20 @@ def main():
 		bug["history"] = histitem["history"]
 
 	# turn bugs into a dict
-	bugs = {bug["id"]: bug for bug in bugs}
+	bugs = {int(bug["id"]): bug for bug in bugs}
 
 	for id in comments:
 		bugs[id]["comments"] = comments[id]["comments"]
 
+	# now move the bugs dict to the products
+	for product in products.values():
+		product["bugs"] = {}
+
+	for id, bug in bugs.items():
+		products[bug["product"]]["bugs"][id] = bug
+
 	with open(EXPORT_FILE, "w") as f:
-		f.write(json.dumps(bugs, cls=RPCEncoder))
+		f.write(json.dumps(products, cls=RPCEncoder))
 
 
 if __name__ == "__main__":
