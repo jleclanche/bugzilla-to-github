@@ -23,6 +23,7 @@ BUG_NO_HASH_SUB = r"bug #\1"
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
+MISSING_MAPPING_DISCLAIMER = "Originally posted by %(user)s:\n\n%(text)s"
 
 try:
 	from local_settings import *
@@ -129,6 +130,8 @@ class Comment(object):
 
 		obj.body = re.sub(COMMENT_RE, COMMENT_SUB, obj.body)
 		obj.body = re.sub(BUG_NO_HASH_RE, BUG_NO_HASH_SUB, obj.body)
+		if not obj.user.github_username():
+			obj.body = MISSING_MAPPING_DISCLAIMER % {"user": obj.user, "text": obj.body}
 		return obj
 
 	def to_github(self):
