@@ -18,6 +18,8 @@ DEFAULT_MILESTONE_USER = ""
 COMMENT_RE = re.compile(r"comment #(\d+)")
 COMMENT_SUB = r"```BZ-IMPORT::comment #\1```"
 COMMENT_REPLY_RE = re.compile(r"\(In reply to (.+) from comment #(\d+)\)" + "\n")
+BUG_NO_HASH_RE = re.compile(r"bug (\d+)")
+BUG_NO_HASH_SUB = r"bug #\1"
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
@@ -126,6 +128,7 @@ class Comment(object):
 			obj.body = re.sub(CREATED_ATTACHMENT_RE, repl, obj.body)
 
 		obj.body = re.sub(COMMENT_RE, COMMENT_SUB, obj.body)
+		obj.body = re.sub(BUG_NO_HASH_RE, BUG_NO_HASH_SUB, obj.body)
 		return obj
 
 	def to_github(self):
