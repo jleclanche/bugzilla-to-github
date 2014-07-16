@@ -48,10 +48,11 @@ def write_json(path, obj):
 		json.dump(obj, f, cls=GithubEncoder)
 
 
+_USERS = {}
 class User(object):
 	def __init__(self, email):
 		self.email = email
-		self.name = ""
+		self.name = _USERS.get(email)
 
 	def __bool__(self):
 		return self.email != NOBODY_EMAIL
@@ -230,7 +231,10 @@ def main():
 	ret = {}
 
 	with open(BUGZILLA_JSON, "r") as f:
-		products = json.load(f)
+		data = json.load(f)
+
+	_USERS = data["users"]
+	products = data["products"]
 
 	for product_name, product in products.items():
 		print("Processing %r (%i bugs)" % (product_name, len(product["bugs"])))
