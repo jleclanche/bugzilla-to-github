@@ -29,6 +29,8 @@ def main():
 		sys.stderr.write("Usage: %s [URL TO XML-RPC]\n" % (sys.argv[0]))
 		exit(1)
 
+	emails = set()
+
 	print("Connecting to %r" % (sys.argv[1]))
 	bugzilla = xmlrpc.client.ServerProxy(sys.argv[1])
 
@@ -56,8 +58,12 @@ def main():
 	# turn bugs into a dict
 	bugs = {int(bug["id"]): bug for bug in bugs}
 
-	for id in comments:
-		bugs[id]["comments"] = comments[id]["comments"]
+	for id, comments in comments.items():
+		comments = comments["comments"]
+		for comment in comments:
+			# Add to the list of users we want to export
+			emails.add(comment["author"])
+		bugs[id]["comments"] = comments
 
 	# now move the bugs dict to the products
 	for product in products.values():
@@ -66,8 +72,14 @@ def main():
 	for id, bug in bugs.items():
 		products[bug["product"]]["bugs"][id] = bug
 
+	json_out = {"products": products}
+
+	print("Exporting all users")
+	users = bugzilla.User.get({"names": list(emails)})["users"]
+	json_out["users"] = {user["name"]: user["real_name"] for user in users}
+
 	with open(EXPORT_FILE, "w") as f:
-		f.write(json.dumps(products, cls=RPCEncoder))
+		f.write(json.dumps(json_out, cls=RPCEncoder))
 
 
 if __name__ == "__main__":
