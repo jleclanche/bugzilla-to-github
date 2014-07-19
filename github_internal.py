@@ -25,6 +25,8 @@ CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
 MISSING_MAPPING_DISCLAIMER = "Originally posted by %(user)s:\n\n%(text)s"
+USER_DELETE_COMMENTS = "nobody@github.local"
+CCS_COMMENT_PLACEHOLDER = "This comment is a placeholder to subscribe all extra CCs to this issue. It should be deleted.\n\nCC: %s"
 
 try:
 	from local_settings import *
@@ -185,11 +187,22 @@ class Bug(object):
 						pass
 
 		obj.comments = []
+		obj.comment_authors = set()
 		for i, comment in enumerate(bug["comments"]):
 			if i == 0:
 				obj.body = comment["text"]
 			else:
-				obj.comments.append(Comment.from_bugzilla_xmlrpc(comment))
+				comment = Comment.from_bugzilla_xmlrpc(comment)
+				obj.comments.append(comment)
+				obj.comment_authors.add(comment.user)
+
+		# process extra CCs (not in comment authors)
+		extra_ccs = [user for user in obj.users if user not in obj.comment_authors and user.github_username()]
+		if extra_ccs:
+			ccs_comment = Comment()
+			ccs_comment.user = User(USER_DELETE_COMMENTS)
+			ccs_comment.body = CCS_COMMENT_PLACEHOLDER % " ".join(str(user) for user in extra_ccs)
+			obj.comments.append(ccs_comment)
 
 		return obj
 
