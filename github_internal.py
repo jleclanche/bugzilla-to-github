@@ -3,6 +3,7 @@
 import json
 import os
 import re
+from datetime import datetime
 
 
 __version__ = "0.1"
@@ -33,7 +34,9 @@ except ImportError:
 
 class GithubEncoder(json.JSONEncoder):
 	def default(self, o):
-		if hasattr(o, "to_github"):
+		if isinstance(o, datetime):
+			return o.isoformat()
+		elif hasattr(o, "to_github"):
 			return o.to_github()
 		raise NotImplementedError(o)
 
