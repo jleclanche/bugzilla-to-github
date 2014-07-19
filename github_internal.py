@@ -21,6 +21,8 @@ COMMENT_SUB = r"```BZ-IMPORT::comment #\1```"
 COMMENT_REPLY_RE = re.compile(r"\(In reply to (.+) from comment #(\d+)\)" + "\n")
 BUG_NO_HASH_RE = re.compile(r"bug (\d+)")
 BUG_NO_HASH_SUB = r"bug #\1"
+OP_VERSION_METADATA = "Version: %(version)s\n\n%(body)s"
+VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
@@ -168,11 +170,11 @@ class Bug(object):
 		obj.is_open = bug["is_open"]
 		obj.product = bug["product"]
 		obj.component = bug["component"]
+		obj.version = bug["version"]
 
 		# unused fields
 		obj.dupe_of = bug.get("dupe_of")
 		obj.is_confirmed = bug["is_confirmed"]
-		obj.version = bug["version"]
 
 		# process history for closed_at
 		obj.closed_at = None
@@ -195,6 +197,10 @@ class Bug(object):
 				comment = Comment.from_bugzilla_xmlrpc(comment)
 				obj.comments.append(comment)
 				obj.comment_authors.add(comment.user)
+
+		# Add version info to the body
+		if obj.version not in VERSION_BLACKLIST:
+			obj.body = OP_VERSION_METADATA % {"version": obj.version, "body": obj.body}
 
 		# process extra CCs (not in comment authors)
 		extra_ccs = [user for user in obj.users if user not in obj.comment_authors and user.github_username()]
