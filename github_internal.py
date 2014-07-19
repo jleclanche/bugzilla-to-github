@@ -119,13 +119,17 @@ class Milestone(object):
 
 
 class Comment(object):
+	def __init__(self):
+		self.created_at = datetime.now()
+		# Bugzilla does not allow comment editing
+		self.updated_at = None
+		self.body = ""
+
 	@classmethod
 	def from_bugzilla_xmlrpc(cls, comment):
 		obj = cls()
 		obj.user = User(comment["author"])
 		obj.created_at = comment["creation_time"]
-		# obj.updated_at = comment["creation_time"] # Bugzilla does not allow comment editing
-		obj.updated_at = None
 		obj.body = comment["text"]
 		obj.attachment = comment.get("attachment_id")
 		if obj.attachment:
