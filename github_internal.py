@@ -92,7 +92,7 @@ class User(object):
 			return None
 		gh_username = self.github_username()
 		if gh_username:
-			return {"username": gh_username}
+			return {"login": gh_username}
 		return {"email": self.email}
 
 
