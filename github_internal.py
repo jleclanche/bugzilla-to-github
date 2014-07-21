@@ -190,13 +190,13 @@ class Bug(object):
 
 		obj.comments = []
 		obj.comment_authors = set()
-		for i, comment in enumerate(bug["comments"]):
-			if i == 0:
-				obj.body = comment["text"]
-			else:
-				comment = Comment.from_bugzilla_xmlrpc(comment)
-				obj.comments.append(comment)
-				obj.comment_authors.add(comment.user)
+		for comment in bug["comments"]:
+			comment = Comment.from_bugzilla_xmlrpc(comment)
+			obj.comments.append(comment)
+			obj.comment_authors.add(comment.user)
+
+		# The body of the bug is comment #0
+		obj.body = obj.comments.pop(0).body
 
 		# Add version info to the body
 		if obj.version not in VERSION_BLACKLIST:
