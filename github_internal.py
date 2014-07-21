@@ -29,6 +29,7 @@ ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
 MISSING_MAPPING_DISCLAIMER = "Originally posted by %(user)s:\n\n%(text)s"
 USER_DELETE_COMMENTS = "nobody@github.local"
 CCS_COMMENT_PLACEHOLDER = "This comment is a placeholder to subscribe all extra CCs to this issue. It should be deleted.\n\nCC: %s"
+DISPLAY_USER_EMAILS = False
 
 try:
 	from local_settings import *
@@ -71,7 +72,9 @@ class User(object):
 		github = self.github_username()
 		if github:
 			return "@" + github
-		return self.name or self.email
+		if DISPLAY_USER_EMAILS:
+			return self.name or self.email
+		return self.name or "(unknown user)"
 
 	def __hash__(self):
 		return self.email.__hash__()
@@ -259,6 +262,7 @@ def main():
 	with open(BUGZILLA_JSON, "r") as f:
 		data = json.load(f)
 
+	global _USERS, _MILESTONES
 	_USERS = data["users"]
 	products = data["products"]
 
