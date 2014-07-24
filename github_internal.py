@@ -12,6 +12,9 @@ __version__ = "0.1"
 GITHUB_MAPPING = {
 	# "email": "github_username"
 }
+GITHUB_REPO_MAPPING = {
+	# "<product>": "<org>/<repository>"
+}
 
 EXPORT_DIRECTORY = "export/"
 BUGZILLA_JSON = "bugzilla.json"
@@ -20,7 +23,9 @@ COMMENT_RE = re.compile(r"comment #(\d+)")
 COMMENT_SUB = r"```BZ-IMPORT::comment #\1```"
 COMMENT_REPLY_RE = re.compile(r"\(In reply to (.+) from comment #(\d+)\)" + "\n")
 BUG_NO_HASH_RE = re.compile(r"bug (\d+)")
-BUG_NO_HASH_SUB = r"bug #\1"
+BUG_NO_HASH_SUB = r"bug #%(id)i"
+BUG_HASH_RE = re.compile(r"bug #(\d+)")
+BUG_HASH_FOREIGN_SUB = r"%(repo)s#%(id)i"
 OP_VERSION_METADATA = "Version: %(version)s\n\n%(body)s"
 VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
@@ -30,6 +35,12 @@ MISSING_MAPPING_DISCLAIMER = "Originally posted by %(user)s:\n\n%(text)s"
 USER_DELETE_COMMENTS = "nobody@github.local"
 CCS_COMMENT_PLACEHOLDER = "This comment is a placeholder to subscribe all extra CCs to this issue. It should be deleted.\n\nCC: %s"
 DISPLAY_USER_EMAILS = False
+
+_USERS = {}
+_MILESTONES = {}
+_PRODUCTS = {}
+_BUGS = {}
+MAX_BUG_ID = 0
 
 try:
 	from local_settings import *
@@ -56,7 +67,6 @@ def write_json(path, obj):
 		json.dump(obj, f, cls=GithubEncoder)
 
 
-_USERS = {}
 class User(object):
 	def __init__(self, email):
 		self.email = email
@@ -96,7 +106,6 @@ class User(object):
 		return {"email": self.email}
 
 
-_MILESTONES = {}
 class Milestone(object):
 	@classmethod
 	def from_bugzilla_xmlrpc(cls, milestone):
@@ -133,7 +142,7 @@ class Comment(object):
 		self.body = ""
 
 	@classmethod
-	def from_bugzilla_xmlrpc(cls, comment):
+	def from_bugzilla_xmlrpc(cls, comment, bug):
 		obj = cls()
 		obj.user = User(comment["author"])
 		obj.created_at = comment["creation_time"]
@@ -144,7 +153,26 @@ class Comment(object):
 			obj.body = re.sub(CREATED_ATTACHMENT_RE, repl, obj.body)
 
 		obj.body = re.sub(COMMENT_RE, COMMENT_SUB, obj.body)
-		obj.body = re.sub(BUG_NO_HASH_RE, BUG_NO_HASH_SUB, obj.body)
+
+		# Change "bug 123" to "bug #123"
+		def max_id_repl(match):
+			id = int(match.group(1))
+			if id > MAX_BUG_ID:
+				return match.group(0)
+			return BUG_NO_HASH_SUB % {"id": id}
+		obj.body = re.sub(BUG_NO_HASH_RE, max_id_repl, obj.body)
+
+		# Cross-project references
+		def cross_project_repl(match):
+			id = int(match.group(1))
+			if id > MAX_BUG_ID:
+				return match.group(0)
+			# Check if the id is not part of the bug product
+			if str(id) not in _PRODUCTS[bug.product]["bugs"]:
+				return BUG_HASH_FOREIGN_SUB % {"repo": GITHUB_REPO_MAPPING[_BUGS[id]], "id": id}
+			return match.group(0)
+		obj.body = re.sub(BUG_HASH_RE, cross_project_repl, obj.body)
+
 		if not obj.user.github_username():
 			obj.body = MISSING_MAPPING_DISCLAIMER % {"user": obj.user, "text": obj.body}
 		return obj
@@ -194,7 +222,7 @@ class Bug(object):
 		obj.comments = []
 		obj.comment_authors = set()
 		for comment in bug["comments"]:
-			comment = Comment.from_bugzilla_xmlrpc(comment)
+			comment = Comment.from_bugzilla_xmlrpc(comment, obj)
 			obj.comments.append(comment)
 			obj.comment_authors.add(comment.user)
 
@@ -262,11 +290,16 @@ def main():
 	with open(BUGZILLA_JSON, "r") as f:
 		data = json.load(f)
 
-	global _USERS, _MILESTONES
+	global _USERS, _MILESTONES, _PRODUCTS, _BUGS, MAX_BUG_ID
 	_USERS = data["users"]
-	products = data["products"]
+	_PRODUCTS = data["products"]
 
-	for product_name, product in products.items():
+	for product in _PRODUCTS:
+		for id in _PRODUCTS[product]["bugs"]:
+			_BUGS[int(id)] = product
+	MAX_BUG_ID = sorted(_BUGS.keys())[-1]
+
+	for product_name, product in _PRODUCTS.items():
 		print("Processing %r (%i bugs)" % (product_name, len(product["bugs"])))
 		for milestone in product["milestones"]:
 			milestone["product"] = product_name
