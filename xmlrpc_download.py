@@ -11,10 +11,22 @@ import sys
 import xmlrpc.client
 
 
-# XXX Edit this to your liking
-MAX_BUG_ID = 3210
-EXPORT_FILE = "bugzilla.json"
-BLACKLIST = [489, 3188]
+# Edit these to your liking or in local_settings.py
+
+# Highest bug id in Bugzilla. Any bug with a higher id will not be imported.
+MAX_BUG_ID = 10000
+
+# Export output file
+XMLRPC_EXPORT_FILE = "bugzilla.json"
+
+# List of bugs that will not be exported
+XMLRPC_BLACKLIST = []
+
+
+try:
+	from local_settings import *
+except ImportError:
+	pass
 
 
 class RPCEncoder(json.JSONEncoder):
