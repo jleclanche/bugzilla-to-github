@@ -60,6 +60,8 @@ class GithubEncoder(json.JSONEncoder):
 	def default(self, o):
 		if isinstance(o, datetime):
 			return o.isoformat()
+		elif isinstance(o, set):
+			return list(o)
 		elif hasattr(o, "to_github"):
 			return o.to_github()
 		raise NotImplementedError(o)
@@ -253,11 +255,11 @@ class Bug(object):
 		return obj
 
 	def get_labels(self):
-		labels = []
+		labels = set()
 		if self.component in COMPONENT_MAPPING.get(self.product, {}):
-			labels.append(COMPONENT_MAPPING[self.product][self.component])
+			labels.add(COMPONENT_MAPPING[self.product][self.component])
 		if self.resolution in RESOLUTION_MAPPING:
-			labels.append(RESOLUTION_MAPPING[self.resolution])
+			labels.add(RESOLUTION_MAPPING[self.resolution])
 		return labels
 
 	def to_github(self):
