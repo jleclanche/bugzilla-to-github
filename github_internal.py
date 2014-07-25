@@ -38,10 +38,10 @@ DEFAULT_MILESTONE_USER = ""
 COMMENT_RE = re.compile(r"comment #(\d+)")
 COMMENT_SUB = r"```BZ-IMPORT::comment #\1```"
 COMMENT_REPLY_RE = re.compile(r"\(In reply to (.+) from comment #(\d+)\)" + "\n")
-BUG_NO_HASH_RE = re.compile(r"bug (\d+)")
-BUG_NO_HASH_SUB = r"bug #%(id)i"
-BUG_HASH_RE = re.compile(r"bug #(\d+)")
-BUG_HASH_FOREIGN_SUB = r"%(repo)s#%(id)i"
+BUG_NO_HASH_RE = re.compile(r"(bug) (\d+)", flags=re.I)
+BUG_NO_HASH_SUB = r"%(bug)s #%(id)i"
+BUG_HASH_RE = re.compile(r"(bug) #(\d+)", flags=re.I)
+BUG_HASH_FOREIGN_SUB = r"%(bug)s %(repo)s#%(id)i"
 OP_VERSION_METADATA = "*Version: %(version)s*\n\n%(body)s"
 OP_DEPENDS_ON_METADATA = "Depends on:\n%(depends_on)s\n\n%(body)s"
 VERSION_BLACKLIST = ["unspecified", "master"]
@@ -175,20 +175,22 @@ class Comment(object):
 
 		# Change "bug 123" to "bug #123"
 		def max_id_repl(match):
-			id = int(match.group(1))
+			_bug = match.group(1)
+			id = int(match.group(2))
 			if id > MAX_BUG_ID:
 				return match.group(0)
-			return BUG_NO_HASH_SUB % {"id": id}
+			return BUG_NO_HASH_SUB % {"bug": _bug, "id": id}
 		obj.body = re.sub(BUG_NO_HASH_RE, max_id_repl, obj.body)
 
 		# Cross-project references
 		def cross_project_repl(match):
-			id = int(match.group(1))
+			_bug = match.group(1)
+			id = int(match.group(2))
 			if id > MAX_BUG_ID:
 				return match.group(0)
 			# Check if the id is not part of the bug product
 			if str(id) not in _PRODUCTS[bug.product]["bugs"]:
-				return BUG_HASH_FOREIGN_SUB % {"repo": GITHUB_REPO_MAPPING[_BUGS[id]["product"]], "id": id}
+				return BUG_HASH_FOREIGN_SUB % {"repo": GITHUB_REPO_MAPPING[_BUGS[id]["product"]], "id": id, "bug": _bug}
 			return match.group(0)
 		obj.body = re.sub(BUG_HASH_RE, cross_project_repl, obj.body)
 
