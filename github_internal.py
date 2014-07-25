@@ -31,7 +31,7 @@ VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
-MISSING_MAPPING_DISCLAIMER = "Originally posted by %(user)s:\n\n%(text)s"
+MISSING_MAPPING_DISCLAIMER = "*Originally posted by %(user)s:*\n\n%(text)s"
 USER_DELETE_COMMENTS = "nobody@github.local"
 CCS_COMMENT_PLACEHOLDER = "This comment is a placeholder to subscribe all extra CCs to this issue. It should be deleted.\n\nCC: %s"
 DISPLAY_USER_EMAILS = False
