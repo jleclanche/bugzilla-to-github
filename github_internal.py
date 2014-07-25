@@ -43,6 +43,7 @@ BUG_NO_HASH_SUB = r"%(bug)s #%(id)i"
 BUG_HASH_RE = re.compile(r"(bug) #(\d+)", flags=re.I)
 BUG_HASH_FOREIGN_SUB = r"%(bug)s %(repo)s#%(id)i"
 OP_VERSION_METADATA = "*Version: %(version)s*\n\n%(body)s"
+OP_SEE_ALSO_METADATA = "*See also:*\n %(see_also)s\n\n%(body)s"
 OP_DEPENDS_ON_METADATA = "Depends on:\n%(depends_on)s\n\n%(body)s"
 VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
@@ -225,6 +226,7 @@ class Bug(object):
 		obj.resolution = bug["resolution"]
 		obj.whiteboard = bug["whiteboard"].split()
 		obj.depends_on = bug["depends_on"]
+		obj.see_also = bug["see_also"]
 
 		# Annoying bugzilla milestones...
 		obj.milestone = None
@@ -261,6 +263,12 @@ class Bug(object):
 		# Add version info to the body
 		if obj.version not in VERSION_BLACKLIST:
 			obj.body = OP_VERSION_METADATA % {"version": obj.version, "body": obj.body}
+
+		if obj.see_also:
+			obj.body = OP_SEE_ALSO_METADATA % {
+				"see_also": "\n".join("* %s" % (url) for url in obj.see_also),
+				"body": obj.body,
+			}
 
 		# Add bug dependencies
 		listitem = "* [%s] %s %s"
