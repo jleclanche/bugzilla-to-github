@@ -183,7 +183,7 @@ class Comment(object):
 				return match.group(0)
 			# Check if the id is not part of the bug product
 			if str(id) not in _PRODUCTS[bug.product]["bugs"]:
-				return BUG_HASH_FOREIGN_SUB % {"repo": GITHUB_REPO_MAPPING[_BUGS[id]], "id": id}
+				return BUG_HASH_FOREIGN_SUB % {"repo": GITHUB_REPO_MAPPING[_BUGS[id]["product"]], "id": id}
 			return match.group(0)
 		obj.body = re.sub(BUG_HASH_RE, cross_project_repl, obj.body)
 
@@ -317,8 +317,8 @@ def main():
 	_PRODUCTS = data["products"]
 
 	for product in _PRODUCTS:
-		for id in _PRODUCTS[product]["bugs"]:
-			_BUGS[int(id)] = product
+		for id, bug in _PRODUCTS[product]["bugs"].items():
+			_BUGS[int(id)] = bug
 	MAX_BUG_ID = sorted(_BUGS.keys())[-1]
 
 	for product_name, product in _PRODUCTS.items():
