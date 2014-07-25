@@ -257,7 +257,7 @@ class Bug(object):
 			obj.body = OP_VERSION_METADATA % {"version": obj.version, "body": obj.body}
 
 		# Add bug dependencies
-		listitem = "* [%s] %s (%s)"
+		listitem = "* [%s] %s %s"
 		depends_on = []
 		for id in sorted(obj.depends_on):
 			# sucky to duplicate... but hey.
