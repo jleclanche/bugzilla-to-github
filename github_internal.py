@@ -42,11 +42,11 @@ BUG_NO_HASH_RE = re.compile(r"bug (\d+)")
 BUG_NO_HASH_SUB = r"bug #%(id)i"
 BUG_HASH_RE = re.compile(r"bug #(\d+)")
 BUG_HASH_FOREIGN_SUB = r"%(repo)s#%(id)i"
-OP_VERSION_METADATA = "Version: %(version)s\n\n%(body)s"
+OP_VERSION_METADATA = "*Version: %(version)s*\n\n%(body)s"
 OP_DEPENDS_ON_METADATA = "Depends on:\n%(depends_on)s\n\n%(body)s"
 VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
-CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
+CREATED_ATTACHMENT_SUB = r"*Created [attachment \1](%s)*" + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
 MISSING_MAPPING_DISCLAIMER = "*Originally posted by %(user)s:*\n\n%(text)s"
 USER_DELETE_COMMENTS = "nobody@github.local"
