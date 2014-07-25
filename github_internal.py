@@ -28,6 +28,10 @@ WHITEBOARD_MAPPING = {
 	# "<whiteboard>": "<tag>"
 }
 
+TITLE_MAPPING = {
+	# "<regex>": "<tag>",
+}
+
 EXPORT_DIRECTORY = "export/"
 BUGZILLA_JSON = "bugzilla.json"
 DEFAULT_MILESTONE_USER = ""
@@ -289,6 +293,12 @@ class Bug(object):
 		for keyword in self.whiteboard:
 			if keyword in WHITEBOARD_MAPPING:
 				labels.add(WHITEBOARD_MAPPING[keyword])
+
+		# Title matches
+		for regex, label in TITLE_MAPPING.items():
+			if re.findall(regex, self.title, re.IGNORECASE):
+				labels.add(label)
+
 		return labels
 
 	def to_github(self):
