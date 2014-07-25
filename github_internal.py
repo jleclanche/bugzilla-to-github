@@ -24,6 +24,10 @@ RESOLUTION_MAPPING = {
 	"WONTFIX": "wontfix",
 }
 
+WHITEBOARD_MAPPING = {
+	# "<whiteboard>": "<tag>"
+}
+
 EXPORT_DIRECTORY = "export/"
 BUGZILLA_JSON = "bugzilla.json"
 DEFAULT_MILESTONE_USER = ""
@@ -213,6 +217,7 @@ class Bug(object):
 		obj.component = bug["component"]
 		obj.version = bug["version"]
 		obj.resolution = bug["resolution"]
+		obj.whiteboard = bug["whiteboard"].split()
 
 		# unused fields
 		obj.dupe_of = bug.get("dupe_of")
@@ -260,6 +265,9 @@ class Bug(object):
 			labels.add(COMPONENT_MAPPING[self.product][self.component])
 		if self.resolution in RESOLUTION_MAPPING:
 			labels.add(RESOLUTION_MAPPING[self.resolution])
+		for keyword in self.whiteboard:
+			if keyword in WHITEBOARD_MAPPING:
+				labels.add(WHITEBOARD_MAPPING[keyword])
 		return labels
 
 	def to_github(self):
