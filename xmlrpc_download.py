@@ -51,7 +51,7 @@ def main():
 	products = {product["name"]: product for product in _products}
 
 	print("Exporting bugs")
-	valid_ids = filter(lambda i: i not in BLACKLIST, range(1, MAX_BUG_ID))
+	valid_ids = filter(lambda i: i not in XMLRPC_BLACKLIST, range(1, MAX_BUG_ID))
 	bugs = bugzilla.Bug.get({"ids": list(valid_ids), "permissive": True})["bugs"]
 	valid_ids = [k["id"] for k in bugs]
 
@@ -90,7 +90,7 @@ def main():
 	users = bugzilla.User.get({"names": list(emails)})["users"]
 	json_out["users"] = {user["name"]: user["real_name"] for user in users}
 
-	with open(EXPORT_FILE, "w") as f:
+	with open(XMLRPC_EXPORT_FILE, "w") as f:
 		f.write(json.dumps(json_out, cls=RPCEncoder))
 
 
