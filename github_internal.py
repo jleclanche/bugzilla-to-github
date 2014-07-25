@@ -211,13 +211,18 @@ class Bug(object):
 		obj.user = User(bug["creator"])
 		obj.users = [User(u) for u in bug["cc"]] # TODO how do I github this?
 		obj.assignee = User(bug["assigned_to"])
-		obj.milestone = _MILESTONES[bug["target_milestone"]]
 		obj.is_open = bug["is_open"]
 		obj.product = bug["product"]
 		obj.component = bug["component"]
 		obj.version = bug["version"]
 		obj.resolution = bug["resolution"]
 		obj.whiteboard = bug["whiteboard"].split()
+
+		# Annoying bugzilla milestones...
+		obj.milestone = None
+		if bug["target_milestone"]:
+			if bug["target_milestone"] != "---":
+				obj.milestone = _MILESTONES[obj.product][bug["target_milestone"]]
 
 		# unused fields
 		obj.dupe_of = bug.get("dupe_of")
@@ -289,10 +294,11 @@ class Bug(object):
 def process_milestone(milestone):
 	if milestone["name"] == "---":
 		# stupid bugzilla ...
-		_MILESTONES["---"] = None
 		return
 	milestone = Milestone.from_bugzilla_xmlrpc(milestone)
-	_MILESTONES[milestone.title] = milestone
+	if milestone.product not in _MILESTONES:
+		_MILESTONES[milestone.product] = {}
+	_MILESTONES[milestone.product][milestone.title] = milestone
 	path = os.path.join(EXPORT_DIRECTORY, GITHUB_REPO_MAPPING[milestone.product], "milestones", "%i.json" % (milestone.id))
 	write_json(path, milestone)
 
@@ -321,12 +327,15 @@ def main():
 			_BUGS[int(id)] = bug
 	MAX_BUG_ID = sorted(_BUGS.keys())[-1]
 
+	# process milestones
 	for product_name, product in _PRODUCTS.items():
-		print("Processing %r (%i bugs)" % (product_name, len(product["bugs"])))
 		for milestone in product["milestones"]:
 			milestone["product"] = product_name
 			process_milestone(milestone)
 
+	# process bugs
+	for product_name, product in _PRODUCTS.items():
+		print("Processing %r (%i bugs)" % (product_name, len(product["bugs"])))
 		for id in sorted(product["bugs"].keys()):
 			process_bug(product["bugs"][id])
 
