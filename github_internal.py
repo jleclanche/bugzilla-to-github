@@ -39,6 +39,7 @@ BUG_NO_HASH_SUB = r"bug #%(id)i"
 BUG_HASH_RE = re.compile(r"bug #(\d+)")
 BUG_HASH_FOREIGN_SUB = r"%(repo)s#%(id)i"
 OP_VERSION_METADATA = "Version: %(version)s\n\n%(body)s"
+OP_DEPENDS_ON_METADATA = "Depends on:\n%(depends_on)s\n\n%(body)s"
 VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"Created [attachment \1](%s)" + "\n\n"
@@ -217,6 +218,7 @@ class Bug(object):
 		obj.version = bug["version"]
 		obj.resolution = bug["resolution"]
 		obj.whiteboard = bug["whiteboard"].split()
+		obj.depends_on = bug["depends_on"]
 
 		# Annoying bugzilla milestones...
 		obj.milestone = None
@@ -253,6 +255,20 @@ class Bug(object):
 		# Add version info to the body
 		if obj.version not in VERSION_BLACKLIST:
 			obj.body = OP_VERSION_METADATA % {"version": obj.version, "body": obj.body}
+
+		# Add bug dependencies
+		listitem = "* [%s] %s (%s)"
+		depends_on = []
+		for id in sorted(obj.depends_on):
+			# sucky to duplicate... but hey.
+			bug = Bug.from_bugzilla_xmlrpc(_BUGS[id])
+			if bug.product == obj.product:
+				ref = "#%i" % (id)
+			else:
+				ref = "%s#%i" % (GITHUB_REPO_MAPPING[_BUGS[id]["product"]], id)
+			depends_on.append(listitem % (" " if bug.is_open else "x", ref, bug.title))
+		if depends_on:
+			obj.body = OP_DEPENDS_ON_METADATA % {"depends_on": "\n".join(depends_on), "body": obj.body}
 
 		# process extra CCs (not in comment authors)
 		extra_ccs = [user for user in obj.users if user not in obj.comment_authors and user.github_username()]
