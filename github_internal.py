@@ -16,6 +16,14 @@ GITHUB_REPO_MAPPING = {
 	# "<product>": "<org>/<repository>"
 }
 
+RESOLUTION_MAPPING = {
+	# Default Github tags
+	"DUPLICATE": "duplicate",
+	"INVALID": "invalid",
+	"WORKSFORME": "invalid",
+	"WONTFIX": "wontfix",
+}
+
 EXPORT_DIRECTORY = "export/"
 BUGZILLA_JSON = "bugzilla.json"
 DEFAULT_MILESTONE_USER = ""
@@ -202,6 +210,7 @@ class Bug(object):
 		obj.product = bug["product"]
 		obj.component = bug["component"]
 		obj.version = bug["version"]
+		obj.resolution = bug["resolution"]
 
 		# unused fields
 		obj.dupe_of = bug.get("dupe_of")
@@ -247,6 +256,8 @@ class Bug(object):
 		labels = []
 		if self.component in COMPONENT_MAPPING.get(self.product, {}):
 			labels.append(COMPONENT_MAPPING[self.product][self.component])
+		if self.resolution in RESOLUTION_MAPPING:
+			labels.append(RESOLUTION_MAPPING[self.resolution])
 		return labels
 
 	def to_github(self):
