@@ -272,15 +272,16 @@ def process_milestone(milestone):
 		return
 	milestone = Milestone.from_bugzilla_xmlrpc(milestone)
 	_MILESTONES[milestone.title] = milestone
-	path = os.path.join(EXPORT_DIRECTORY, milestone.product, "milestones/%i.json" % (milestone.id))
+	path = os.path.join(EXPORT_DIRECTORY, GITHUB_REPO_MAPPING[milestone.product], "milestones", "%i.json" % (milestone.id))
 	write_json(path, milestone)
 
 
 def process_bug(bug):
 	bug = Bug.from_bugzilla_xmlrpc(bug)
-	path = os.path.join(EXPORT_DIRECTORY, bug.product, "issues/%i.json" % (bug.id))
+	base_dir = os.path.join(EXPORT_DIRECTORY, GITHUB_REPO_MAPPING[bug.product], "issues")
+	path = os.path.join(base_dir, "%i.json" % (bug.id))
 	write_json(path, bug)
-	path = os.path.join(EXPORT_DIRECTORY, bug.product, "issues/%i.comments.json" % (bug.id))
+	path = os.path.join(base_dir, "%i.comments.json" % (bug.id))
 	write_json(path, bug.comments)
 
 
