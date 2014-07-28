@@ -34,6 +34,7 @@ TITLE_MAPPING = {
 
 EXPORT_DIRECTORY = "export/"
 BUGZILLA_JSON = "bugzilla.json"
+BUGZILLA_DATE_FORMAT = "%Y%m%dT%H:%M:%S"
 DEFAULT_MILESTONE_USER = ""
 COMMENT_RE = re.compile(r"comment #(\d+)")
 COMMENT_SUB = r"```BZ-IMPORT::comment #\1```"
@@ -165,7 +166,7 @@ class Comment(object):
 	def from_bugzilla_xmlrpc(cls, comment, bug):
 		obj = cls()
 		obj.user = User(comment["author"])
-		obj.created_at = comment["creation_time"]
+		obj.created_at = datetime.strptime(comment["creation_time"], BUGZILLA_DATE_FORMAT)
 		obj.body = comment["text"]
 		obj.attachment = comment.get("attachment_id")
 		if obj.attachment:
