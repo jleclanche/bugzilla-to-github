@@ -49,6 +49,7 @@ OP_DEPENDS_ON_METADATA = "Depends on:\n%(depends_on)s\n\n%(body)s"
 VERSION_BLACKLIST = ["unspecified", "master"]
 CREATED_ATTACHMENT_RE = re.compile(r"Created attachment (\d+)" + "\n")
 CREATED_ATTACHMENT_SUB = r"*Created [attachment \1](%s)*" + "\n\n"
+CREATED_ATTACHMENT_SUB_TEXTILE = r'_Created "attachment \1":%s_' + "\n\n"
 ATTACHMENT_URL = "http://bugs.example.com/attachment.cgi?id=%(attachment_id)i"
 MISSING_MAPPING_DISCLAIMER = "*Originally posted by %(user)s:*\n\n%(text)s"
 USER_DELETE_COMMENTS = "nobody@github.local"
@@ -170,7 +171,11 @@ class Comment(object):
 		obj.body = comment["text"]
 		obj.attachment = comment.get("attachment_id")
 		if obj.attachment:
-			repl = CREATED_ATTACHMENT_SUB % (ATTACHMENT_URL % {"attachment_id": obj.attachment})
+			url = ATTACHMENT_URL % {"attachment_id": obj.attachment}
+			if obj.markup == "textile":
+				repl = CREATED_ATTACHMENT_SUB_TEXTILE % (url)
+			else:
+				repl = CREATED_ATTACHMENT_SUB % (url)
 			obj.body = re.sub(CREATED_ATTACHMENT_RE, repl, obj.body)
 
 		obj.body = re.sub(COMMENT_RE, COMMENT_SUB, obj.body)
@@ -199,6 +204,12 @@ class Comment(object):
 		if not obj.user.github_username():
 			obj.body = MISSING_MAPPING_DISCLAIMER % {"user": obj.user, "text": obj.body}
 		return obj
+
+	@property
+	def markup(self):
+		if self.created_at <= datetime(year=2009, month=4, day=20, hour=19):
+			return "textile"
+		return "markdown"
 
 	def to_github(self):
 		return {
